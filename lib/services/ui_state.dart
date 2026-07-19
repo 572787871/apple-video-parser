@@ -204,10 +204,6 @@ class UiState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _saveParseRecords() async {
-    await parseHistoryStore.save(recentParses.take(20).toList());
-  }
-
   Future<void> _loadFolders() async {
     final stored = await folderStore.load();
     folders
@@ -218,30 +214,6 @@ class UiState extends ChangeNotifier {
 
   Future<void> _saveFolders() async {
     await folderStore.save(folders);
-  }
-
-  void _upsertParseRecord(ParseRecord record) {
-    recentParses.removeWhere((item) => item.pageUrl == record.pageUrl);
-    recentParses.insert(0, record);
-    if (recentParses.length > 20) {
-      recentParses.removeRange(20, recentParses.length);
-    }
-    recentUrls
-      ..remove(record.pageUrl)
-      ..insert(0, record.pageUrl);
-  }
-
-  String _hostFromUrl(String url) {
-    return Uri.tryParse(url)?.host ?? url;
-  }
-
-  VideoResource? _firstDownloadable(List<VideoResource> values) {
-    for (final item in values) {
-      if (item.isPlayable && !item.isAdSuspect && !item.isFragment) {
-        return item;
-      }
-    }
-    return null;
   }
 
   List<VideoResource> _dedupe(Iterable<VideoResource> values) {

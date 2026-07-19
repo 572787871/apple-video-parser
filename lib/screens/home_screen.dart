@@ -9,7 +9,6 @@ import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/download_confirm_dialog.dart';
-import '../widgets/gradient_button.dart';
 import 'resource_preview_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -155,9 +154,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (data?.text?.trim().isNotEmpty ?? false) {
-      setState(() => controller.text = data!.text!.trim());
+      final text = data!.text!.trim();
+      if (mounted) setState(() => controller.text = text);
       focusNode.unfocus();
-      _parse(context);
+      if (mounted) _parse(context);
     }
   }
 
@@ -216,7 +216,6 @@ class _InputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
