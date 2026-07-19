@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 
 import 'package:flutter/widgets.dart';
 
@@ -13,7 +14,6 @@ import 'local_library.dart';
 import 'parse_history_store.dart';
 import 'video_sniffer.dart';
 
-enum HomeSnifferState { idle, sniffing, found, notFound, failed }
 
 class UiState extends ChangeNotifier {
   UiState() {
@@ -40,11 +40,6 @@ class UiState extends ChangeNotifier {
   int selectedTab = 0;
   bool onlyWifi = false;
   bool parsing = false;
-  HomeSnifferState homeSnifferState = HomeSnifferState.idle;
-  String homeSnifferStatus = '准备就绪';
-  String activeSniffUrl = '';
-  String browserOpenUrl = '';
-  int browserOpenRequestId = 0;
   String status = '准备就绪';
 
   void addRecent(String url) {
@@ -53,89 +48,6 @@ class UiState extends ChangeNotifier {
     recentUrls.remove(value);
     recentUrls.insert(0, value);
     notifyListeners();
-  }
-
-  void startHomeSniff(String url) {
-    final value = url.trim();
-    if (value.isEmpty) return;
-    addRecent(value);
-    activeSniffUrl = value;
-    homeSnifferState = HomeSnifferState.sniffing;
-    homeSnifferStatus = '正在监听视频资源...';
-    status = '正在监听视频资源';
-    notifyListeners();
-  }
-
-  void updateHomeSniffProgress(int count) {
-    if (homeSnifferState != HomeSnifferState.sniffing) return;
-    homeSnifferStatus = count <= 0
-        ? '正在监听视频资源...'
-        : (count == 1 ? '已发现 1 个视频...' : '已发现 $count 个资源...');
-    status = homeSnifferStatus;
-    notifyListeners();
-  }
-
-  Future<void> finishHomeSniffFound(ParseRecord record) async {
-    final prioritized = sniffer.prioritizeResources(record.resources);
-    final recommended = _firstDownloadable(prioritized);
-    final next = record.copyWith(
-      status: ParseRecordStatus.found,
-      resources: prioritized,
-      recommendedUrl: recommended?.url ?? '',
-      sourceSite: record.sourceSite.isEmpty
-          ? _hostFromUrl(record.pageUrl)
-          : record.sourceSite,
-    );
-    _upsertParseRecord(next);
-    homeSnifferState = HomeSnifferState.found;
-    homeSnifferStatus = '已发现 ${prioritized.length} 个视频资源';
-    status = homeSnifferStatus;
-    activeSniffUrl = '';
-    notifyListeners();
-    await _saveParseRecords();
-  }
-
-  Future<void> finishHomeSniffNotFound({
-    required String pageUrl,
-    required String pageTitle,
-  }) async {
-    final record = ParseRecord(
-      pageUrl: pageUrl,
-      pageTitle: pageTitle.trim().isEmpty ? _hostFromUrl(pageUrl) : pageTitle,
-      parsedAt: DateTime.now(),
-      status: ParseRecordStatus.notFound,
-      sourceSite: _hostFromUrl(pageUrl),
-      message: '未自动发现视频。部分网站需要先播放视频。',
-    );
-    _upsertParseRecord(record);
-    homeSnifferState = HomeSnifferState.notFound;
-    homeSnifferStatus = '未发现视频，请进入网页播放后嗅探。';
-    status = homeSnifferStatus;
-    activeSniffUrl = '';
-    notifyListeners();
-    await _saveParseRecords();
-  }
-
-  Future<void> finishHomeSniffFailed({
-    required String pageUrl,
-    required String pageTitle,
-    required Object error,
-  }) async {
-    final record = ParseRecord(
-      pageUrl: pageUrl,
-      pageTitle: pageTitle.trim().isEmpty ? _hostFromUrl(pageUrl) : pageTitle,
-      parsedAt: DateTime.now(),
-      status: ParseRecordStatus.failed,
-      sourceSite: _hostFromUrl(pageUrl),
-      message: '解析失败：$error',
-    );
-    _upsertParseRecord(record);
-    homeSnifferState = HomeSnifferState.failed;
-    homeSnifferStatus = '解析失败，请重试或进入网页播放。';
-    status = homeSnifferStatus;
-    activeSniffUrl = '';
-    notifyListeners();
-    await _saveParseRecords();
   }
 
   Future<void> parseUrl(String url) async {
@@ -227,13 +139,13 @@ class UiState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 已移除内置浏览器：仅保留复制页面链接的入口，避免无效跳转。
   void openInBrowser(String url) {
     final value = url.trim();
     if (value.isEmpty) return;
-    browserOpenUrl = value;
-    browserOpenRequestId++;
-    selectedTab = 0;
-    notifyListeners();
+    unawaited(
+      Clipboard.setData(ClipboardData(text: value)).then((_) {}),
+    );
   }
 
   Future<LibraryFolder> createFolder(String name) async {

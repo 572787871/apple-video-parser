@@ -4,18 +4,21 @@ class AppTextField extends StatelessWidget {
   const AppTextField({
     required this.controller,
     required this.hintText,
+    this.focusNode,
     this.onSubmitted,
     super.key,
   });
 
   final TextEditingController controller;
   final String hintText;
+  final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: TextInputType.url,
       textInputAction: TextInputAction.go,
       autocorrect: false,
