@@ -34,6 +34,8 @@
   <string>用于导入、导出和管理本地视频文件。</string>
   <key>NSAppTransportSecurity</key>
   <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
     <key>NSAllowsArbitraryLoadsInWebContent</key>
     <true/>
   </dict>

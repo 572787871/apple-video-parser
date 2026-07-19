@@ -67,6 +67,11 @@ class _HomeScreenState extends State<HomeScreen> {
               onPaste: _paste,
               onParse: () => _parse(context),
             ),
+            if (state.status.isNotEmpty && (state.parsing || state.resources.isEmpty))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _StatusBanner(status: state.status, parsing: state.parsing),
+              ),
             const SizedBox(height: 20),
             if (state.recentUrls.isNotEmpty) ...[
               _SectionTitle('最近的链接'),
@@ -487,6 +492,59 @@ class _TypeBox extends StatelessWidget {
           fontWeight: FontWeight.w800,
           fontSize: 12,
         ),
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.status, required this.parsing});
+
+  final String status;
+  final bool parsing;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isError = status.contains('失败') ||
+        status.contains('错误') ||
+        status.contains('无效');
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isError
+            ? scheme.errorContainer
+            : scheme.primaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          if (parsing)
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Icon(
+              isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+              size: 16,
+              color: isError ? scheme.onErrorContainer : scheme.onPrimaryContainer,
+            ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              status,
+              style: TextStyle(
+                fontSize: 13,
+                color: isError
+                    ? scheme.onErrorContainer
+                    : scheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

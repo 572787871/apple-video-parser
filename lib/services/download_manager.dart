@@ -402,8 +402,13 @@ class DownloadManager extends ChangeNotifier {
     debugPrint('[download] save path=${output.path}');
     await _prefetchPlaylist(task);
 
+    final referer = task.resource.referer.isNotEmpty
+        ? task.resource.referer
+        : task.resource.pageUrl;
     final command = [
       '-y',
+      '-protocol_whitelist file,http,https,tcp,tls,crypto',
+      '-referer ${_shellQuote(referer)}',
       '-headers ${_shellQuote(_ffmpegHeaders(task.resource))}',
       '-i ${_shellQuote(task.resource.url)}',
       '-c copy',
@@ -418,6 +423,8 @@ class DownloadManager extends ChangeNotifier {
       }
       final fallback = [
         '-y',
+        '-protocol_whitelist file,http,https,tcp,tls,crypto',
+        '-referer ${_shellQuote(referer)}',
         '-headers ${_shellQuote(_ffmpegHeaders(task.resource))}',
         '-i ${_shellQuote(task.resource.url)}',
         '-c:v copy',

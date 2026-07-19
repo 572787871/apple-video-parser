@@ -43,11 +43,13 @@ class VideoSniffer {
       options: Options(
         responseType: ResponseType.plain,
         followRedirects: true,
-        headers: const {
+        headers: {
           'User-Agent':
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
           'Accept':
               'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Referer': pageUri.toString(),
         },
       ),
     );
