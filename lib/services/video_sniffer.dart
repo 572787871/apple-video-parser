@@ -65,11 +65,18 @@ class VideoSniffer {
     String cookie = '',
     String source = 'dom',
   }) {
-    final title = _pageTitle(html) ?? pageUri.host;
+    // 预处理：还原 JSON 字符串里的转义斜杠（很多站点把 m3u8 写成 https:\/\/...）。
+    final decoded = html.replaceAll(r'\/', '/');
+    final title = _pageTitle(decoded) ?? pageUri.host;
     final candidates = <String>[];
     final patterns = <RegExp>[
       RegExp(
         r'''https?:[^"'\\\s<>]+?\.(?:m3u8|mp4|m4v|mov|ts|m4s)(?:\?[^"'\\\s<>]*)?''',
+        caseSensitive: false,
+      ),
+      // 容错：覆盖 JSON 转义后或相对路径形式的媒体地址。
+      RegExp(
+        r'''[^\s"'<>]*\.(?:m3u8|mp4|m4v|mov|ts|m4s)(?:\?[^\s"'<>]*)?''',
         caseSensitive: false,
       ),
       RegExp(
@@ -91,7 +98,7 @@ class VideoSniffer {
     ];
 
     for (final pattern in patterns) {
-      for (final match in pattern.allMatches(html)) {
+      for (final match in pattern.allMatches(decoded)) {
         candidates.add(
           match.groupCount >= 1
               ? (match.group(1) ?? match.group(0)!)
