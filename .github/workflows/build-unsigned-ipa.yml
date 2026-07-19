@@ -1,0 +1,87 @@
+name: Build VidSniffer Pro IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    name: Build unsigned iOS IPA
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install Flutter packages
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze
+
+      - name: Disable Flutter Swift Package Manager integration
+        run: |
+          flutter config --no-enable-swift-package-manager
+          flutter config
+
+      - name: Prepare iOS build files
+        run: flutter build ios --release --no-codesign --config-only
+
+      - name: Build unsigned iOS app with Xcode
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios_xcode \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          IPA_DIR="build/ios/ipa"
+          IPA_PATH="$IPA_DIR/VidSniffer-Pro-unsigned.ipa"
+          APP_PATH="$(find build -path '*/Release-iphoneos/Runner.app' -type d | head -n 1)"
+
+          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
+            echo "Runner.app not found under build/"
+            find build -maxdepth 6 -name Runner.app -print || true
+            exit 1
+          fi
+
+          rm -rf "$IPA_DIR"
+          mkdir -p "$IPA_DIR/Payload"
+          cp -R "$APP_PATH" "$IPA_DIR/Payload/Runner.app"
+          (cd "$IPA_DIR" && zip -qry "$(basename "$IPA_PATH")" Payload)
+          test -f "$IPA_PATH"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VidSniffer-Pro-unsigned-ipa
+          path: build/ios/ipa/VidSniffer-Pro-unsigned.ipa
+          if-no-files-found: error

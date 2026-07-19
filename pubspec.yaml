@@ -1,0 +1,28 @@
+name: web_video_downloader
+description: A Flutter iOS app for parsing, sniffing, downloading, merging, and playing user-accessible web video.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  dio: ^5.7.0
+  ffmpeg_kit_flutter_new: ^4.2.0
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  video_player: ^2.9.2
+  video_thumbnail: ^0.5.3
+  flutter_inappwebview: ^6.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
